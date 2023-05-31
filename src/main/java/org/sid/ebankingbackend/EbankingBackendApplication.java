@@ -3,17 +3,20 @@ package org.sid.ebankingbackend;
 import org.sid.ebankingbackend.entities.*;
 import org.sid.ebankingbackend.entities.enums.AccountStatus;
 import org.sid.ebankingbackend.entities.enums.operationType;
+import org.sid.ebankingbackend.exceptions.BalanceNotSufficientException;
+import org.sid.ebankingbackend.exceptions.BankAccountNotFoundException;
+import org.sid.ebankingbackend.exceptions.CustomerNotFoundException;
 import org.sid.ebankingbackend.repositories.AccountOperationRepository;
 import org.sid.ebankingbackend.repositories.BankAccountRepository;
 import org.sid.ebankingbackend.repositories.CustomerRepository;
-import org.sid.ebankingbackend.services.BankService;
+import org.sid.ebankingbackend.services.BankAccountService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import javax.xml.crypto.Data;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -24,9 +27,37 @@ public class EbankingBackendApplication {
 		SpringApplication.run(EbankingBackendApplication.class, args);
 	}
 	@Bean
-	CommandLineRunner commandLineRunner(BankService bankService){
+	CommandLineRunner commandLineRunner(BankAccountService bankAccountService){
 		return args -> {
-			bankService.consult();
+			Stream.of("Hassan", "Ayman", "Hiba").forEach(
+					name->{
+						Customer customer= new Customer();
+						customer.setName(name);
+						customer.setEmail(name+"@gmail.com");
+						bankAccountService.saveCustomer(customer);
+					});
+			bankAccountService.listCustomers().forEach(
+					customer -> {
+						try {
+							CurrentAccount currentAccount= bankAccountService.saveCurrentBankAccount(100000*Math.random(), 9000, customer.getId());
+							SavingAccount savingAccount= bankAccountService.saveSavingBankAccount(100000*Math.random(), 5.5, customer.getId());
+
+						} catch (CustomerNotFoundException e) {
+							e.printStackTrace();
+						}
+					}
+			);
+			List<BankAccount> bankAccountList = bankAccountService.bankAccountList();
+			for (BankAccount bankAccount:bankAccountList) {
+				for (int i=0; i<10; i++){
+					try {
+						bankAccountService.credit(bankAccount.getId(), 10000+Math.random()*100000,"Credit");
+						bankAccountService.debit(bankAccount.getId(), 9000+Math.random()*1000,"Debit");
+					} catch (BankAccountNotFoundException | BalanceNotSufficientException e) {
+						e.printStackTrace();
+					}
+				}
+			}
 		};
 	}
 	//@Bean

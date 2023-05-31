@@ -2,7 +2,6 @@ package org.sid.ebankingbackend.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.sid.ebankingbackend.entities.enums.operationType;
@@ -19,4 +18,5 @@ public class AccountOperation {
     private operationType type;
     @ManyToOne
     private BankAccount bankAccount;
+    private String description;
 }
