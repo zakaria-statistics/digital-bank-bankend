@@ -1,6 +1,9 @@
 package org.sid.ebankingbackend;
 
+import org.sid.ebankingbackend.dtos.BankAccountDTO;
+import org.sid.ebankingbackend.dtos.CurrentAccountDTO;
 import org.sid.ebankingbackend.dtos.CustomerDTO;
+import org.sid.ebankingbackend.dtos.SavingAccountDTO;
 import org.sid.ebankingbackend.entities.*;
 import org.sid.ebankingbackend.entities.enums.AccountStatus;
 import org.sid.ebankingbackend.entities.enums.operationType;
@@ -40,20 +43,26 @@ public class EbankingBackendApplication {
 			bankAccountService.listCustomers().forEach(
 					customer -> {
 						try {
-							CurrentAccount currentAccount= bankAccountService.saveCurrentBankAccount(100000*Math.random(), 9000, customer.getId());
-							SavingAccount savingAccount= bankAccountService.saveSavingBankAccount(100000*Math.random(), 5.5, customer.getId());
+							CurrentAccountDTO currentAccountDTO= bankAccountService.saveCurrentBankAccount(100000*Math.random(), 9000, customer.getId());
+							SavingAccountDTO savingAccountDTO= bankAccountService.saveSavingBankAccount(100000*Math.random(), 5.5, customer.getId());
 
 						} catch (CustomerNotFoundException e) {
 							e.printStackTrace();
 						}
 					}
 			);
-			List<BankAccount> bankAccountList = bankAccountService.bankAccountList();
-			for (BankAccount bankAccount:bankAccountList) {
+			List<BankAccountDTO> bankAccountList = bankAccountService.bankAccountList();
+			for (BankAccountDTO bankAccount:bankAccountList) {
 				for (int i=0; i<10; i++){
 					try {
-						bankAccountService.credit(bankAccount.getId(), 10000+Math.random()*100000,"Credit");
-						bankAccountService.debit(bankAccount.getId(), 9000+Math.random()*1000,"Debit");
+						String accountId;
+						if (bankAccount instanceof CurrentAccountDTO){
+							accountId= ((CurrentAccountDTO) bankAccount).getId();
+						}else {
+							accountId= ((SavingAccountDTO)bankAccount).getId();
+						}
+						bankAccountService.credit(accountId, 10000+Math.random()*100000,"Credit");
+						bankAccountService.debit(accountId, 9000+Math.random()*1000,"Debit");
 					} catch (BankAccountNotFoundException | BalanceNotSufficientException e) {
 						e.printStackTrace();
 					}
