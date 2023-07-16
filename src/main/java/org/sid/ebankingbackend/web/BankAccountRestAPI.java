@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@CrossOrigin("*")
 public class BankAccountRestAPI {
     BankAccountService bankAccountService;
 
@@ -22,6 +23,10 @@ public class BankAccountRestAPI {
     @GetMapping("/accounts")
     public List<BankAccountDTO> bankAccountDTOS(){
         return bankAccountService.bankAccountList();
+    }
+    @GetMapping("/customer-accounts/{customerId}")
+    public List<BankAccountDTO> customerBankAccountDTOS(@PathVariable Long customerId){
+        return bankAccountService.customerBankAccountList(customerId);
     }
     @GetMapping("/accounts/{accountId}/operations")
     public List<AccountOperationDTO> getHistory(@PathVariable String accountId){

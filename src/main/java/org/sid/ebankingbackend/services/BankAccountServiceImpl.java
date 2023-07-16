@@ -15,7 +15,6 @@ import org.sid.ebankingbackend.repositories.BankAccountRepository;
 import org.sid.ebankingbackend.repositories.CustomerRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.querydsl.QPageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -163,6 +162,21 @@ public class BankAccountServiceImpl implements BankAccountService {
         return bankAccountDTOS;
     }
     @Override
+    public List<BankAccountDTO> customerBankAccountList(Long customerId){
+        List<BankAccountDTO> bankAccountDTOS = bankAccountRepository.findByCustomerId(customerId).stream().map(
+                bankAccount -> {
+                    if (bankAccount instanceof SavingAccount) {
+                        SavingAccount savingAccount = (SavingAccount) bankAccount;
+                        return bankAccountMapper.fromSavingAccount(savingAccount);
+                    } else {
+                        CurrentAccount currentAccount = (CurrentAccount) bankAccount;
+                        return bankAccountMapper.fromCurrentAccount(currentAccount);
+                    }
+                }).collect(Collectors.toList());
+
+        return bankAccountDTOS;
+    }
+    @Override
     public CustomerDTO getCustomer(Long customerId) throws CustomerNotFoundException {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
@@ -192,10 +206,10 @@ public class BankAccountServiceImpl implements BankAccountService {
         BankAccount bankAccount= bankAccountRepository.findById(accountId).orElse(null);
         if (bankAccount==null)
             throw new BankAccountNotFoundException("Account not Found");
-        Page<AccountOperation> accountOperations = accountOperationRepository.findByBankAccountId(accountId, PageRequest.of(page, size));
+        Page<AccountOperation> accountOperations = accountOperationRepository.findByBankAccountIdOrderByOperationDateDesc(accountId, PageRequest.of(page, size));
         AccountHistoryDTO accountHistoryDTO= new AccountHistoryDTO();
         List<AccountOperationDTO> accountOperationDTOS = accountOperations.getContent().stream().map(op -> bankAccountMapper.fromAccountOperation(op)).collect(Collectors.toList());
-        accountHistoryDTO.setAccountOperationDTOList(accountOperationDTOS);
+        accountHistoryDTO.setAccountOperationDTOS(accountOperationDTOS);
         accountHistoryDTO.setAccountId(bankAccount.getId());
         accountHistoryDTO.setBalance(bankAccount.getBalance());
         accountHistoryDTO.setCurrentPage(page);
@@ -203,5 +217,12 @@ public class BankAccountServiceImpl implements BankAccountService {
         accountHistoryDTO.setTotalPages(accountOperations.getTotalPages());
         return accountHistoryDTO;
 
+    }
+
+    @Override
+    public List<CustomerDTO> searchCustomers(String keyword) {
+        List<Customer> customers=customerRepository.searchCustomer(keyword);
+        List<CustomerDTO> customerDTOS = customers.stream().map(customer -> bankAccountMapper.fromCustomer(customer)).collect(Collectors.toList());
+        return customerDTOS;
     }
 }
